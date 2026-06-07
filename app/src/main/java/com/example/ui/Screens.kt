@@ -156,7 +156,30 @@ fun StudyMateAppContent(viewModel: MainActivityViewModel) {
         currentScreen != StudyMateScreen.Register &&
         currentScreen != StudyMateScreen.Dashboard) {
         androidx.activity.compose.BackHandler {
-            viewModel.navigateTo(StudyMateScreen.Dashboard)
+            when (currentScreen) {
+                StudyMateScreen.Pdfs -> {
+                    val selectedPdf = viewModel.selectedPdf.value
+                    val activeFolder = viewModel.activePdfFolder.value
+                    if (selectedPdf != null) {
+                        viewModel.selectPdf(null)
+                    } else if (activeFolder != null) {
+                        viewModel.setActivePdfFolder(null)
+                    } else {
+                        viewModel.navigateTo(StudyMateScreen.Dashboard)
+                    }
+                }
+                StudyMateScreen.Notes -> {
+                    val selectedNote = viewModel.selectedNote.value
+                    if (selectedNote != null) {
+                        viewModel.selectNote(null)
+                    } else {
+                        viewModel.navigateTo(StudyMateScreen.Dashboard)
+                    }
+                }
+                else -> {
+                    viewModel.navigateTo(StudyMateScreen.Dashboard)
+                }
+            }
         }
     }
 
@@ -174,7 +197,32 @@ fun StudyMateAppContent(viewModel: MainActivityViewModel) {
                     },
                     navigationIcon = {
                         if (currentScreen != StudyMateScreen.Dashboard) {
-                            IconButton(onClick = { viewModel.navigateTo(StudyMateScreen.Dashboard) }) {
+                            IconButton(onClick = {
+                                when (currentScreen) {
+                                    StudyMateScreen.Pdfs -> {
+                                        val selectedPdf = viewModel.selectedPdf.value
+                                        val activeFolder = viewModel.activePdfFolder.value
+                                        if (selectedPdf != null) {
+                                            viewModel.selectPdf(null)
+                                        } else if (activeFolder != null) {
+                                            viewModel.setActivePdfFolder(null)
+                                        } else {
+                                            viewModel.navigateTo(StudyMateScreen.Dashboard)
+                                        }
+                                    }
+                                    StudyMateScreen.Notes -> {
+                                        val selectedNote = viewModel.selectedNote.value
+                                        if (selectedNote != null) {
+                                            viewModel.selectNote(null)
+                                        } else {
+                                            viewModel.navigateTo(StudyMateScreen.Dashboard)
+                                        }
+                                    }
+                                    else -> {
+                                        viewModel.navigateTo(StudyMateScreen.Dashboard)
+                                    }
+                                }
+                            }) {
                                 Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back to Dashboard", tint = if (isDark) Color.White else Color(0xFF777777))
                             }
                         }
@@ -1927,29 +1975,47 @@ fun AIChatScreen(viewModel: MainActivityViewModel) {
                     contentColor = Color(0xFF58CC02)
                 )
 
+                val menuBgColor = if (isDark) Color(0xFF1E293B) else Color.White
+                val menuBorderColor = if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0)
+
                 DropdownMenu(
                     expanded = dropdownExpanded,
                     onDismissRequest = { dropdownExpanded = false },
-                    modifier = Modifier.background(Color.White)
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(menuBgColor)
+                        .border(1.5.dp, menuBorderColor, RoundedCornerShape(16.dp))
+                        .padding(vertical = 4.dp)
                 ) {
                     AIChatTool.values().forEach { tool ->
                         DropdownMenuItem(
                             text = {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(
+                                            if (selectedTool == tool) {
+                                                if (isDark) Color(0xFF334155) else Color(0xFFF1FDF0)
+                                            } else {
+                                                Color.Transparent
+                                            }
+                                        )
+                                        .padding(horizontal = 12.dp, vertical = 8.dp)
                                 ) {
                                     Icon(
                                         imageVector = tool.icon,
                                         contentDescription = null,
-                                        tint = if (selectedTool == tool) Color(0xFF58CC02) else Color(0xFF64748B),
-                                        modifier = Modifier.size(18.dp)
+                                        tint = if (selectedTool == tool) Color(0xFF58CC02) else (if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)),
+                                        modifier = Modifier.size(20.dp)
                                     )
                                     Text(
                                         text = tool.label,
                                         fontSize = 13.sp,
                                         fontWeight = if (selectedTool == tool) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (selectedTool == tool) Color(0xFF58CC02) else Color(0xFF334155)
+                                        color = if (selectedTool == tool) Color(0xFF58CC02) else (if (isDark) Color(0xFFE2E8F0) else Color(0xFF334155))
                                     )
                                 }
                             },
@@ -1957,7 +2023,8 @@ fun AIChatScreen(viewModel: MainActivityViewModel) {
                                 viewModel.setSelectedChatTool(tool)
                                 textInput = ""
                                 dropdownExpanded = false
-                            }
+                            },
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
                 }
@@ -3049,7 +3116,7 @@ fun PdfsScreen(viewModel: MainActivityViewModel) {
     var pdfSubjectInput by remember { mutableStateOf("General") }
     var pickedTempFile by remember { mutableStateOf("Calculus_Module_1.pdf") }
 
-    var activeFolderSubject by remember { mutableStateOf<String?>(null) }
+    val activeFolderSubject by viewModel.activePdfFolder.collectAsState()
     var isCreatingSubjectFolder by remember { mutableStateOf(false) }
     var newSubjectFolderName by remember { mutableStateOf("") }
 
@@ -3142,6 +3209,7 @@ fun PdfsScreen(viewModel: MainActivityViewModel) {
                 DuolingoButton(
                     text = "AI SUMMARIZE 📝",
                     onClick = {
+                        viewModel.setSelectedChatTool(com.example.ui.AIChatTool.Summarize)
                         viewModel.generatePdfSummary(pdf.title)
                         viewModel.navigateTo(com.example.ui.StudyMateScreen.AIChat)
                     },
@@ -3312,7 +3380,7 @@ fun PdfsScreen(viewModel: MainActivityViewModel) {
                     onClick = {
                         viewModel.uploadSimulatedPdf(pdfTitleInput, pickedTempFile, pdfSubjectInput)
                         // Trigger navigating into this newly populated folder automatically
-                        activeFolderSubject = pdfSubjectInput
+                        viewModel.setActivePdfFolder(pdfSubjectInput)
                         isAddingPdf = false
                         pdfTitleInput = ""
                     },
@@ -3344,7 +3412,7 @@ fun PdfsScreen(viewModel: MainActivityViewModel) {
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .clickable { activeFolderSubject = null }
+                            .clickable { viewModel.setActivePdfFolder(null) }
                     ) {
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF58CC02))
                         Text(
@@ -3360,7 +3428,7 @@ fun PdfsScreen(viewModel: MainActivityViewModel) {
                         IconButton(
                             onClick = {
                                 viewModel.deletePdfFolderByName(currentFolder)
-                                activeFolderSubject = null
+                                viewModel.setActivePdfFolder(null)
                             }
                         ) {
                             Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete Empty Folder", tint = Color(0xFFFF4B4B))
@@ -3478,7 +3546,7 @@ fun PdfsScreen(viewModel: MainActivityViewModel) {
                         DuolingoCard(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { activeFolderSubject = pathFolder },
+                                .clickable { viewModel.setActivePdfFolder(pathFolder) },
                             color = Color(0xFFFFFDF5),
                             borderColor = Color(0xFFFEF3C7),
                             shadowColor = Color(0xFFFDE68A),
@@ -3593,7 +3661,7 @@ fun PdfsScreen(viewModel: MainActivityViewModel) {
                                 if (newSubjectFolderName.isNotBlank()) {
                                     val cleanedFolderName = newSubjectFolderName.trim()
                                     viewModel.createPdfFolder(cleanedFolderName)
-                                    activeFolderSubject = cleanedFolderName
+                                    viewModel.setActivePdfFolder(cleanedFolderName)
                                     pdfSubjectInput = cleanedFolderName
                                     isCreatingSubjectFolder = false
                                     newSubjectFolderName = ""

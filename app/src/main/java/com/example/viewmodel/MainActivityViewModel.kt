@@ -206,6 +206,9 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     private val _selectedPdf = MutableStateFlow<PdfEntity?>(null)
     val selectedPdf: StateFlow<PdfEntity?> = _selectedPdf.asStateFlow()
 
+    private val _activePdfFolder = MutableStateFlow<String?>(null)
+    val activePdfFolder: StateFlow<String?> = _activePdfFolder.asStateFlow()
+
     // --- Congratulatory Dialog State ---
     private val _recentUnlockedBadge = MutableStateFlow<String?>(null)
     val recentUnlockedBadge: StateFlow<String?> = _recentUnlockedBadge.asStateFlow()
@@ -960,6 +963,10 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     // --- PDF Notebook Organizer ---
     fun selectPdf(pdf: PdfEntity?) {
         _selectedPdf.value = pdf
+    }
+
+    fun setActivePdfFolder(folder: String?) {
+        _activePdfFolder.value = folder
     }
 
     fun deletePdf(id: Int) {
