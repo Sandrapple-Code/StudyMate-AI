@@ -1975,8 +1975,8 @@ fun AIChatScreen(viewModel: MainActivityViewModel) {
                     contentColor = Color(0xFF58CC02)
                 )
 
-                val menuBgColor = if (isDark) Color(0xFF1E293B) else Color.White
-                val menuBorderColor = if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0)
+                 val menuBgColor = Color.White
+                val menuBorderColor = Color(0xFFE2E8F0)
 
                 DropdownMenu(
                     expanded = dropdownExpanded,
@@ -1998,7 +1998,7 @@ fun AIChatScreen(viewModel: MainActivityViewModel) {
                                         .clip(RoundedCornerShape(10.dp))
                                         .background(
                                             if (selectedTool == tool) {
-                                                if (isDark) Color(0xFF334155) else Color(0xFFF1FDF0)
+                                                Color(0xFFF1FDF0)
                                             } else {
                                                 Color.Transparent
                                             }
@@ -2008,14 +2008,14 @@ fun AIChatScreen(viewModel: MainActivityViewModel) {
                                     Icon(
                                         imageVector = tool.icon,
                                         contentDescription = null,
-                                        tint = if (selectedTool == tool) Color(0xFF58CC02) else (if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)),
+                                        tint = if (selectedTool == tool) Color(0xFF58CC02) else Color(0xFF64748B),
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Text(
                                         text = tool.label,
                                         fontSize = 13.sp,
                                         fontWeight = if (selectedTool == tool) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (selectedTool == tool) Color(0xFF58CC02) else (if (isDark) Color(0xFFE2E8F0) else Color(0xFF334155))
+                                        color = if (selectedTool == tool) Color(0xFF58CC02) else Color(0xFF334155)
                                     )
                                 }
                             },
@@ -2284,7 +2284,7 @@ fun AIChatScreen(viewModel: MainActivityViewModel) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(imageVector = selectedTool.icon, contentDescription = selectedTool.label, tint = Color(0xFF58CC02), modifier = Modifier.size(28.dp))
-                    Text(text = selectedTool.label.uppercase(), fontWeight = FontWeight.Black, fontSize = 16.sp, color = Color(0xFF3C3C3C))
+                    Text(text = selectedTool.label.uppercase(), fontWeight = FontWeight.Black, fontSize = 16.sp, color = Color.Black)
                 }
             }
 
@@ -2297,8 +2297,19 @@ fun AIChatScreen(viewModel: MainActivityViewModel) {
                             OutlinedTextField(
                                 value = targetLanguage,
                                 onValueChange = { targetLanguage = it },
-                                label = { Text("Target Language (e.g. French, Japanese, Spanish)") },
-                                modifier = Modifier.fillMaxWidth()
+                                label = { Text("Target Language (e.g. French, Japanese, Spanish)", color = Color.Black) },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor = Color.Black,
+                                    unfocusedTextColor = Color.Black,
+                                    focusedPlaceholderColor = Color(0xFF475569),
+                                    unfocusedPlaceholderColor = Color(0xFF475569),
+                                    focusedLabelColor = Color.Black,
+                                    unfocusedLabelColor = Color(0xFF475569),
+                                    focusedBorderColor = Color.Black,
+                                    unfocusedBorderColor = Color.Black,
+                                    cursorColor = Color.Black
+                                )
                             )
                         }
                         else -> {}
@@ -2309,7 +2320,7 @@ fun AIChatScreen(viewModel: MainActivityViewModel) {
                         onValueChange = { textInput = it },
                         placeholder = {
                             Text(
-                                when (selectedTool) {
+                                text = when (selectedTool) {
                                     AIChatTool.Explain -> "Type a concept, e.g. Quantum Computing..."
                                     AIChatTool.Summarize -> "Paste long article text to condense..."
                                     AIChatTool.Quiz -> "Enter topic for flash quizzes, e.g. Mitochondria..."
@@ -2317,13 +2328,23 @@ fun AIChatScreen(viewModel: MainActivityViewModel) {
                                     AIChatTool.Flashcard -> "Revision topic for automated cards..."
                                     AIChatTool.StudyPlan -> "What are you preparing for? (exam subject)..."
                                     else -> "Enter your instruction details..."
-                                }
+                                },
+                                color = Color(0xFF475569)
                             )
                         },
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 100.dp),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            focusedPlaceholderColor = Color(0xFF475569),
+                            unfocusedPlaceholderColor = Color(0xFF475569),
+                            focusedBorderColor = Color.Black,
+                            unfocusedBorderColor = Color.Black,
+                            cursorColor = Color.Black
+                        )
                     )
 
                     ScientificSymbolTray(
@@ -2537,7 +2558,10 @@ fun AIChatScreen(viewModel: MainActivityViewModel) {
                 // Standard Markdown Text Output Rendering
                 else if (aiResponse.isNotEmpty()) {
                     item {
-                        MarkdownText(markdownString = aiResponse)
+                        MarkdownText(
+                            markdownString = aiResponse,
+                            isOverLightBackground = true
+                        )
                     }
                 }
             }
@@ -2591,7 +2615,7 @@ fun InteractiveChatCompanion(viewModel: MainActivityViewModel, modifier: Modifie
                         text = "STUDYMATE CHAT BUDDY",
                         fontWeight = FontWeight.Black,
                         fontSize = 13.sp,
-                        color = Color(0xFF3C3C3C)
+                        color = Color.Black
                     )
                     Text(
                         text = if (isLoading) "Thinking..." else "Online",
@@ -2637,10 +2661,10 @@ fun InteractiveChatCompanion(viewModel: MainActivityViewModel, modifier: Modifie
                     StudyMateOwl(expression = MascotExpression.Happy, modifier = Modifier.size(90.dp))
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        "YOUR INTERACTIVE CHAT PARTNER! 💬🎓",
+                        "YOUR INTERACTIVE CHAT BUDDY! 💬🎓",
                         fontWeight = FontWeight.Black,
                         fontSize = 15.sp,
-                        color = Color(0xFF1E293B),
+                        color = Color.Black,
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(6.dp))
@@ -2815,7 +2839,10 @@ fun InteractiveChatCompanion(viewModel: MainActivityViewModel, modifier: Modifie
                                     .padding(horizontal = 14.dp, vertical = 10.dp)
                             ) {
                                 Column {
-                                    MarkdownText(markdownString = chat.response)
+                                    MarkdownText(
+                                        markdownString = chat.response,
+                                        isOverLightBackground = true
+                                    )
                                 }
                             }
                         }
@@ -2853,9 +2880,18 @@ fun InteractiveChatCompanion(viewModel: MainActivityViewModel, modifier: Modifie
             OutlinedTextField(
                 value = chatInputText,
                 onValueChange = { chatInputText = it },
-                placeholder = { Text("Ask anything...") },
+                placeholder = { Text("Ask anything...", color = Color(0xFF475569)) },
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(24.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedPlaceholderColor = Color(0xFF475569),
+                    unfocusedPlaceholderColor = Color(0xFF475569),
+                    focusedBorderColor = Color(0xFF58CC02),
+                    unfocusedBorderColor = Color(0xFFE2E8F0),
+                    cursorColor = Color.Black
+                ),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = {
                     if (chatInputText.isNotBlank() && !isLoading) {
@@ -2890,6 +2926,7 @@ fun InteractiveChatCompanion(viewModel: MainActivityViewModel, modifier: Modifie
 fun NotesScreen(viewModel: MainActivityViewModel) {
     val notesList by viewModel.notes.collectAsState()
     val selectedNote by viewModel.selectedNote.collectAsState()
+    val isDark by viewModel.isDarkMode.collectAsState()
 
     var isCreatingNew by remember { mutableStateOf(false) }
 
@@ -2935,7 +2972,7 @@ fun NotesScreen(viewModel: MainActivityViewModel) {
                 "${selectedNote!!.chapter} - ${selectedNote!!.topic}",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Black,
-                color = Color(0xFF3C3C3C)
+                color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF3C3C3C)
             )
 
             Divider(color = Color(0xFFE5E5E5))
@@ -4170,6 +4207,7 @@ fun FocusModeScreen(viewModel: MainActivityViewModel) {
 @Composable
 fun HistoryScreen(viewModel: MainActivityViewModel) {
     val conversations by viewModel.conversations.collectAsState()
+    val isDark by viewModel.isDarkMode.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
 
     Column(
@@ -4177,7 +4215,7 @@ fun HistoryScreen(viewModel: MainActivityViewModel) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("AI CONVERSATION HISTORY LOGS", fontWeight = FontWeight.Black, fontSize = 18.sp, color = Color(0xFF3C3C3C))
+        Text("AI CONVERSATION HISTORY LOGS", fontWeight = FontWeight.Black, fontSize = 18.sp, color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF3C3C3C))
         Spacer(modifier = Modifier.height(4.dp))
         Text("Track, review and delete past prompts generated by Gemini.", fontSize = 12.sp, color = Color(0xFF777777))
 
@@ -4232,7 +4270,7 @@ fun HistoryScreen(viewModel: MainActivityViewModel) {
                                 Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFFF4B4B), modifier = Modifier.size(16.dp))
                             }
                         }
-                        Text("PROMPT: \"${log.prompt}\"", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF3C3C3C))
+                        Text("PROMPT: \"${log.prompt}\"", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF3C3C3C))
                         Spacer(modifier = Modifier.height(4.dp))
                         MarkdownText(markdownString = log.response)
                     }

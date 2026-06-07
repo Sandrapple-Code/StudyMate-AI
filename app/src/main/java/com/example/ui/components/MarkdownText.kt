@@ -30,10 +30,11 @@ import androidx.compose.ui.unit.sp
 fun MarkdownText(
     markdownString: String,
     modifier: Modifier = Modifier,
-    textColor: Color = Color(0xFF3C3C3C)
+    textColor: Color = Color(0xFF3C3C3C),
+    isOverLightBackground: Boolean = false
 ) {
     val isDark = com.example.ui.theme.LocalIsDarkMode.current
-    val textColor = if (isDark) {
+    val textColor = if (isDark && !isOverLightBackground) {
         if (textColor == Color(0xFF3C3C3C) || textColor == Color(0xFF141C24) || textColor == Color(0xFF1E293B) || textColor == Color.Unspecified) {
             Color(0xFFF1F5F9)
         } else {
@@ -193,6 +194,7 @@ fun MarkdownText(
  */
 @Composable
 fun RenderMarkdownTable(tableRows: List<String>, textColor: Color) {
+    val tableCellTextColor = Color(0xFF1E293B)
     // Each row in tableRows is a raw line starting/ending with |
     val parsedRows = tableRows.map { row ->
         val parts = row.split("|").map { it.trim() }
@@ -245,10 +247,10 @@ fun RenderMarkdownTable(tableRows: List<String>, textColor: Color) {
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = renderFormattedSpans(cellText, textColor),
+                            text = renderFormattedSpans(cellText, tableCellTextColor),
                             fontWeight = if (isHeader) FontWeight.Black else FontWeight.Normal,
                             fontSize = 12.sp,
-                            color = if (isHeader) Color(0xFF0F172A) else textColor
+                            color = if (isHeader) Color(0xFF0F172A) else tableCellTextColor
                         )
                     }
                 }
@@ -277,7 +279,7 @@ private fun renderFormattedSpans(text: String, baseColor: Color) = buildAnnotate
             // Find closing double asterisk
             val closingDoubleAsterisk = translatedText.indexOf("**", nextDoubleAsterisk + 2)
             if (closingDoubleAsterisk != -1) {
-                withStyle(style = SpanStyle(fontWeight = FontWeight.ExtraBold, color = Color(0xFF222222))) {
+                withStyle(style = SpanStyle(fontWeight = FontWeight.ExtraBold, color = baseColor)) {
                     append(translatedText.substring(nextDoubleAsterisk + 2, closingDoubleAsterisk))
                 }
                 index = closingDoubleAsterisk + 2

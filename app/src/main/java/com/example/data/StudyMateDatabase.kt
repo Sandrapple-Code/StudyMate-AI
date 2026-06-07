@@ -203,6 +203,9 @@ interface StudyMateDao {
     @Query("SELECT * FROM timetable WHERE username = :username ORDER BY dayOfWeek, time ASC")
     fun getTimetable(username: String): Flow<List<TimetableEntity>>
 
+    @Query("SELECT * FROM timetable WHERE isReminderEnabled = 1")
+    suspend fun getAllEnabledRemindersDirect(): List<TimetableEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTimetable(item: TimetableEntity)
 

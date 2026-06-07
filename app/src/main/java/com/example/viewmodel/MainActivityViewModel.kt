@@ -266,15 +266,32 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
 
         val sdfDay = java.text.SimpleDateFormat("EEEE", java.util.Locale.US)
         val sdfTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.US)
+        val todayDateStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
         val now = java.util.Date()
         val dayName = sdfDay.format(now)
         val timeStr = sdfTime.format(now)
 
+        val lastCleanedDate = prefs.getString("last_cleaned_date", "")
+        val savedStamps = prefs.getStringSet("triggered_stamps", null)?.toMutableSet() ?: mutableSetOf()
+
+        val triggeredStampsSet = if (lastCleanedDate != todayDateStr) {
+            val freshMap = mutableSetOf<String>()
+            prefs.edit()
+                .putString("last_cleaned_date", todayDateStr)
+                .putStringSet("triggered_stamps", freshMap)
+                .apply()
+            freshMap
+        } else {
+            savedStamps
+        }
+
         for (item in currentList) {
             if (item.isReminderEnabled && item.dayOfWeek.equals(dayName, ignoreCase = true) && item.time == timeStr) {
-                val stamp = "${item.id}-$dayName-$timeStr"
-                if (stamp !in triggeredStamps) {
-                    triggeredStamps.add(stamp)
+                val stamp = "${item.id}-$todayDateStr"
+                if (!triggeredStampsSet.contains(stamp)) {
+                    triggeredStampsSet.add(stamp)
+                    prefs.edit().putStringSet("triggered_stamps", triggeredStampsSet).apply()
+
                     _activeReminder.value = item
                     _mascotMessage.value = "🦉 BEEP BEEP! It's study time for: ${item.subject.uppercase()}! You scheduled this session on $dayName at $timeStr. Let's learn! 🔥"
                     _mascotExpression.value = MascotExpression.Celebrating
