@@ -39,4 +39,8 @@ StudyMate AI is an AI-powered study companion designed to help students learn sm
 
 ## Author
 
-Developed as a student-focused AI learning platform.
+Sanskriti
+
+Built as a student project to explore Android development, AI integration, and productivity-focused learning tools.
+LinkedIn: https://www.linkedin.com/in/sanskriti-shakya-581a89372/
+
