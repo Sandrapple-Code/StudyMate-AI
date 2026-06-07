@@ -2282,9 +2282,28 @@ fun AIChatScreen(viewModel: MainActivityViewModel) {
         ) {
             // Title Header / instructions of Active Tool
             item {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Icon(imageVector = selectedTool.icon, contentDescription = selectedTool.label, tint = Color(0xFF58CC02), modifier = Modifier.size(28.dp))
-                    Text(text = selectedTool.label.uppercase(), fontWeight = FontWeight.Black, fontSize = 16.sp, color = Color.Black)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(imageVector = selectedTool.icon, contentDescription = selectedTool.label, tint = Color(0xFF58CC02), modifier = Modifier.size(28.dp))
+                        Text(text = selectedTool.label.uppercase(), fontWeight = FontWeight.Black, fontSize = 16.sp, color = Color.Black)
+                    }
+                    if (aiResponse.isNotEmpty() || activeQuiz.isNotEmpty() || activeCards.isNotEmpty() || activeMindmap != null || textInput.isNotEmpty()) {
+                        TextButton(
+                            onClick = {
+                                viewModel.resetActiveToolResponse()
+                                textInput = ""
+                            }
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(imageVector = Icons.Default.Refresh, contentDescription = "Reset Response", tint = Color(0xFFFF4B4B), modifier = Modifier.size(16.dp))
+                                Text("RESET RESPONSE", color = Color(0xFFFF4B4B), fontWeight = FontWeight.Black, fontSize = 11.sp)
+                            }
+                        }
+                    }
                 }
             }
 
@@ -2937,6 +2956,77 @@ fun NotesScreen(viewModel: MainActivityViewModel) {
     var textContent by remember { mutableStateOf("") }
     var drawingState by remember { mutableStateOf("") }
 
+    // Folder and Search States
+    var activeFolderSubject by remember { mutableStateOf<String?>(null) }
+    var isCreatingSubjectFolder by remember { mutableStateOf(false) }
+    var newSubjectFolderName by remember { mutableStateOf("") }
+    var searchQuery by remember { mutableStateOf("") }
+
+    val context = LocalContext.current
+    val prefs = remember(context) { context.getSharedPreferences("studymate_prefs", android.content.Context.MODE_PRIVATE) }
+    var customNoteFolders by remember {
+        mutableStateOf(
+            prefs.getStringSet("custom_note_folders", null)?.toList() ?: emptyList()
+        )
+    }
+
+    // Dynamic folders format
+    val displayFolders = remember(notesList, customNoteFolders) {
+        val set = linkedSetOf("General", "Mathematics", "Science")
+        customNoteFolders.forEach { set.add(it) }
+        notesList.forEach { if (it.subject.isNotBlank()) set.add(it.subject) }
+        set.toList()
+    }
+
+    if (isCreatingSubjectFolder) {
+        AlertDialog(
+            onDismissRequest = { isCreatingSubjectFolder = false },
+            title = { Text("CREATE NEW SUBJECT FOLDER 📁", fontWeight = FontWeight.Black, fontSize = 15.sp, color = Color.Black) },
+            text = {
+                OutlinedTextField(
+                    value = newSubjectFolderName,
+                    onValueChange = { newSubjectFolderName = it },
+                    placeholder = { Text("e.g. History, Biology, Physics", color = Color.Gray) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedBorderColor = Color(0xFF58CC02),
+                        unfocusedBorderColor = Color(0xFFCBD5E1)
+                    )
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (newSubjectFolderName.isNotBlank()) {
+                            val cleanedFolderName = newSubjectFolderName.trim()
+                            if (!customNoteFolders.contains(cleanedFolderName)) {
+                                val updated = customNoteFolders + cleanedFolderName
+                                prefs.edit().putStringSet("custom_note_folders", updated.toSet()).apply()
+                                customNoteFolders = updated
+                            }
+                            newSubjectFolderName = ""
+                            isCreatingSubjectFolder = false
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF58CC02))
+                ) {
+                    Text("SAVE FOLDER", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { isCreatingSubjectFolder = false }) {
+                    Text("CANCEL", color = Color.Gray)
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+
     if (selectedNote != null) {
         // Detailed single note display view
         Column(
@@ -3012,7 +3102,12 @@ fun NotesScreen(viewModel: MainActivityViewModel) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("CREATE NEW STUDY NOTE", fontWeight = FontWeight.Black, fontSize = 16.sp)
+                Text(
+                    "CREATE NEW STUDY NOTE 📝",
+                    fontWeight = FontWeight.Black,
+                    fontSize = 16.sp,
+                    color = if (isDark) Color.White else Color.Black
+                )
                 IconButton(onClick = { isCreatingNew = false }) {
                     Icon(imageVector = Icons.Default.Close, contentDescription = "Cancel")
                 }
@@ -3021,32 +3116,64 @@ fun NotesScreen(viewModel: MainActivityViewModel) {
             OutlinedTextField(
                 value = subject,
                 onValueChange = { subject = it },
-                label = { Text("Subject (e.g. Physics)") },
+                label = { Text("Subject (e.g. Physics)", color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)) },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = if (isDark) Color.White else Color.Black,
+                    unfocusedTextColor = if (isDark) Color.White else Color.Black,
+                    focusedBorderColor = Color(0xFF58CC02),
+                    unfocusedBorderColor = if (isDark) Color(0xFF475569) else Color(0xFFCBD5E1),
+                    focusedLabelColor = Color(0xFF58CC02),
+                    unfocusedLabelColor = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                )
             )
             OutlinedTextField(
                 value = chapter,
                 onValueChange = { chapter = it },
-                label = { Text("Chapter (e.g. Chapter 4: Thermodynamics)") },
+                label = { Text("Chapter (e.g. Chapter 4: Thermodynamics)", color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)) },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = if (isDark) Color.White else Color.Black,
+                    unfocusedTextColor = if (isDark) Color.White else Color.Black,
+                    focusedBorderColor = Color(0xFF58CC02),
+                    unfocusedBorderColor = if (isDark) Color(0xFF475569) else Color(0xFFCBD5E1),
+                    focusedLabelColor = Color(0xFF58CC02),
+                    unfocusedLabelColor = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                )
             )
             OutlinedTextField(
                 value = topic,
                 onValueChange = { topic = it },
-                label = { Text("Topic (e.g. Entropy)") },
+                label = { Text("Topic (e.g. Entropy)", color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)) },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = if (isDark) Color.White else Color.Black,
+                    unfocusedTextColor = if (isDark) Color.White else Color.Black,
+                    focusedBorderColor = Color(0xFF58CC02),
+                    unfocusedBorderColor = if (isDark) Color(0xFF475569) else Color(0xFFCBD5E1),
+                    focusedLabelColor = Color(0xFF58CC02),
+                    unfocusedLabelColor = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                )
             )
             OutlinedTextField(
                 value = textContent,
                 onValueChange = { textContent = it },
-                label = { Text("Typed rich detailed study notes details...") },
+                label = { Text("Typed rich detailed study notes details...", color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 120.dp),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = if (isDark) Color.White else Color.Black,
+                    unfocusedTextColor = if (isDark) Color.White else Color.Black,
+                    focusedBorderColor = Color(0xFF58CC02),
+                    unfocusedBorderColor = if (isDark) Color(0xFF475569) else Color(0xFFCBD5E1),
+                    focusedLabelColor = Color(0xFF58CC02),
+                    unfocusedLabelColor = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                )
             )
 
             ScientificSymbolTray(
@@ -3079,58 +3206,265 @@ fun NotesScreen(viewModel: MainActivityViewModel) {
             )
         }
     } else {
-        // Vault items lists
+        // Vault items lists organized by subjects or cabinet folders
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("NOTEBOOK VAULT", fontWeight = FontWeight.Black, fontSize = 18.sp, color = Color(0xFF3C3C3C))
-                IconButton(
-                    onClick = { isCreatingNew = true },
-                    modifier = Modifier.background(Color(0xFF58CC02), shape = CircleShape)
-                ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "Add", tint = Color.White)
+            if (activeFolderSubject != null) {
+                val currentFolder = activeFolderSubject!!
+                val filteredNotes = notesList.filter { note ->
+                    note.subject.equals(currentFolder, ignoreCase = true) && (
+                        searchQuery.isBlank() || 
+                        note.topic.contains(searchQuery, ignoreCase = true) ||
+                        note.chapter.contains(searchQuery, ignoreCase = true) ||
+                        note.content.contains(searchQuery, ignoreCase = true)
+                    )
                 }
-            }
 
-            if (notesList.isEmpty()) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(imageVector = Icons.Default.NoteAlt, contentDescription = "empty", tint = Color(0xFFDCDCDC), modifier = Modifier.size(64.dp))
-                    Text("Your notebook vault is empty! Tap the green + button to write your first note.", fontSize = 13.sp, color = Color(0xFF888888), textAlign = TextAlign.Center, modifier = Modifier.padding(16.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { activeFolderSubject = null }
+                    ) {
+                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF58CC02))
+                        Text(
+                            text = "BACK TO SHELVES",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color(0xFF58CC02)
+                        )
+                    }
                 }
+
+                Text(
+                    text = "📁 NOTEBOOK FOLDER: ${currentFolder.uppercase()}",
+                    fontWeight = FontWeight.Black,
+                    fontSize = 18.sp,
+                    color = Color(0xFF3C3C3C),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                // Search Bar for Notebook Notes
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Search notes inside this folder...", color = Color(0xFF475569)) },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = "Search", tint = Color.Gray) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedPlaceholderColor = Color(0xFF475569),
+                        unfocusedPlaceholderColor = Color(0xFF475569),
+                        focusedBorderColor = Color(0xFF58CC02),
+                        unfocusedBorderColor = Color(0xFFE2E8F0)
+                    )
+                )
+
+                if (filteredNotes.isEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(24.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FolderOpen,
+                            contentDescription = "empty notes folder",
+                            tint = Color(0xFFDCDCDC),
+                            modifier = Modifier.size(64.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = if (searchQuery.isNotBlank()) "No search matches found." else "No notebook notes available in this folder yet.",
+                            fontSize = 13.sp,
+                            color = Color(0xFF888888),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(filteredNotes) { note ->
+                            DuolingoCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { viewModel.selectNote(note) }
+                            ) {
+                                Text(note.subject.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF58CC02))
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(note.topic, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3C3C3C))
+                                Text(note.chapter, fontSize = 13.sp, color = Color(0xFF777777))
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(note.content.take(80) + "...", fontSize = 13.sp, color = Color(0xFF555555))
+                                if (note.isImageAttached) {
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Icon(imageVector = Icons.Default.Palette, contentDescription = "Drawing", tint = Color(0xFF1CB0F6), modifier = Modifier.size(16.dp))
+                                        Text("Contains design diagram blueprints", fontSize = 11.sp, color = Color(0xFF1CB0F6), fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Add note action button for this folder
+                Spacer(modifier = Modifier.height(12.dp))
+                DuolingoButton(
+                    text = "CREATE NOTE IN THIS FOLDER 📝➕",
+                    onClick = {
+                        subject = currentFolder
+                        isCreatingNew = true
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
             } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                // Main cabinet folders list layout
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(notesList) { note ->
+                    Text("NOTEBOARD VAULT CABINETS 🗄️", fontWeight = FontWeight.Black, fontSize = 18.sp, color = Color(0xFF3C3C3C))
+                    IconButton(
+                        onClick = { isCreatingSubjectFolder = true },
+                        modifier = Modifier.background(Color(0xFF58CC02), shape = CircleShape)
+                    ) {
+                        Icon(imageVector = Icons.Default.Add, contentDescription = "Create Empty Notebook Folder", tint = Color.White)
+                    }
+                }
+
+                Text(
+                    text = "Select a study notebook shelf folder below to review revision notes, search materials or write custom chapter notes.",
+                    fontSize = 12.sp,
+                    color = Color(0xFF777777),
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(displayFolders) { pathFolder ->
+                        val count = notesList.count { it.subject.equals(pathFolder, ignoreCase = true) }
                         DuolingoCard(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { viewModel.selectNote(note) }
+                                .clickable { 
+                                    activeFolderSubject = pathFolder
+                                    searchQuery = "" 
+                                },
+                            color = Color(0xFFFFFDF5),
+                            borderColor = Color(0xFFFEF3C7),
+                            shadowColor = Color(0xFFFDE68A),
+                            shape = RoundedCornerShape(18.dp)
                         ) {
-                            Text(note.subject.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF58CC02))
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(note.topic, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3C3C3C))
-                            Text(note.chapter, fontSize = 13.sp, color = Color(0xFF777777))
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(note.content.take(80) + "...", fontSize = 13.sp, color = Color(0xFF555555))
-                            if (note.isImageAttached) {
-                                Spacer(modifier = Modifier.height(6.dp))
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Icon(imageVector = Icons.Default.Palette, contentDescription = "Drawing", tint = Color(0xFF1CB0F6), modifier = Modifier.size(16.dp))
-                                    Text("Contains design diagram blueprints", fontSize = 11.sp, color = Color(0xFF1CB0F6), fontWeight = FontWeight.Bold)
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(46.dp)
+                                        .background(Color(0xFFFEF3C7), shape = RoundedCornerShape(12.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Folder,
+                                        contentDescription = "Folder",
+                                        tint = Color(0xFFD97706),
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = pathFolder.uppercase(),
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 15.sp,
+                                        color = Color(0xFF92400E)
+                                    )
+                                    Text(
+                                        text = "$count custom study notes written",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFFB45309)
+                                    )
+                                }
+                                Icon(
+                                    imageVector = Icons.Default.ArrowForward,
+                                    contentDescription = "Navigate in",
+                                    tint = Color(0xFFD97706),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // Bottom helper cards to add layout flavor
+                    item {
+                        DuolingoCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { isCreatingSubjectFolder = true },
+                            color = Color(0xFFF8FAFC),
+                            borderColor = Color(0xFFE2E8F0),
+                            shadowColor = Color(0xFFCBD5E1),
+                            shape = RoundedCornerShape(18.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(46.dp)
+                                        .background(Color(0xFFF1F5F9), shape = RoundedCornerShape(12.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CreateNewFolder,
+                                        contentDescription = "Creating custom subject",
+                                        tint = Color(0xFF64748B),
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "ADD CUSTOM SUBJECT FOLDER",
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF334155)
+                                    )
+                                    Text(
+                                        text = "Add a brand new physical category shelf to sort your custom scribbled revision chapters.",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF64748B)
+                                    )
                                 }
                             }
                         }
@@ -3147,6 +3481,8 @@ fun PdfsScreen(viewModel: MainActivityViewModel) {
     val pdfsList by viewModel.pdfs.collectAsState()
     val pdfFoldersList by viewModel.pdfFolders.collectAsState()
     val selectedPdf by viewModel.selectedPdf.collectAsState()
+
+    var pdfSearchQuery by remember { mutableStateOf("") }
 
     var isAddingPdf by remember { mutableStateOf(false) }
     var pdfTitleInput by remember { mutableStateOf("") }
@@ -3435,7 +3771,12 @@ fun PdfsScreen(viewModel: MainActivityViewModel) {
             // Check if user is drilling down inside a subject folder
             if (activeFolderSubject != null) {
                 val currentFolder = activeFolderSubject!!
-                val filteredPdfs = pdfsList.filter { it.subject == currentFolder }
+                val filteredPdfs = pdfsList.filter { pdf ->
+                    pdf.subject == currentFolder && (
+                        pdfSearchQuery.isBlank() || 
+                        pdf.title.contains(pdfSearchQuery, ignoreCase = true)
+                    )
+                }
 
                 Row(
                     modifier = Modifier
@@ -3449,7 +3790,10 @@ fun PdfsScreen(viewModel: MainActivityViewModel) {
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .clickable { viewModel.setActivePdfFolder(null) }
+                            .clickable {
+                                pdfSearchQuery = ""
+                                viewModel.setActivePdfFolder(null)
+                            }
                     ) {
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF58CC02))
                         Text(
@@ -3465,6 +3809,7 @@ fun PdfsScreen(viewModel: MainActivityViewModel) {
                         IconButton(
                             onClick = {
                                 viewModel.deletePdfFolderByName(currentFolder)
+                                pdfSearchQuery = ""
                                 viewModel.setActivePdfFolder(null)
                             }
                         ) {
@@ -3478,7 +3823,25 @@ fun PdfsScreen(viewModel: MainActivityViewModel) {
                     fontWeight = FontWeight.Black,
                     fontSize = 18.sp,
                     color = Color(0xFF3C3C3C),
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                // Search Bar for PDFs
+                OutlinedTextField(
+                    value = pdfSearchQuery,
+                    onValueChange = { pdfSearchQuery = it },
+                    placeholder = { Text("Search documents inside this folder...", color = Color(0xFF475569)) },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = "Search", tint = Color.Gray) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedPlaceholderColor = Color(0xFF475569),
+                        unfocusedPlaceholderColor = Color(0xFF475569),
+                        focusedBorderColor = Color(0xFF58CC02),
+                        unfocusedBorderColor = Color(0xFFE2E8F0)
+                    )
                 )
 
                 if (filteredPdfs.isEmpty()) {
@@ -3498,7 +3861,7 @@ fun PdfsScreen(viewModel: MainActivityViewModel) {
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = "No syllabi or document PDFs available in the \"$currentFolder\" folder yet.",
+                            text = if (pdfSearchQuery.isNotBlank()) "No search matches found." else "No syllabi or document PDFs available in the \"$currentFolder\" folder yet.",
                             fontSize = 13.sp,
                             color = Color(0xFF888888),
                             textAlign = TextAlign.Center
@@ -3583,7 +3946,10 @@ fun PdfsScreen(viewModel: MainActivityViewModel) {
                         DuolingoCard(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { viewModel.setActivePdfFolder(pathFolder) },
+                                .clickable {
+                                    pdfSearchQuery = ""
+                                    viewModel.setActivePdfFolder(pathFolder)
+                                },
                             color = Color(0xFFFFFDF5),
                             borderColor = Color(0xFFFEF3C7),
                             shadowColor = Color(0xFFFDE68A),

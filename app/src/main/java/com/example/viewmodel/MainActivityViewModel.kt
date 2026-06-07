@@ -100,6 +100,13 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
         _selectedChatTool.value = tool
     }
 
+    fun resetActiveToolResponse() {
+        _aiResponseText.value = ""
+        _activeQuiz.value = emptyList()
+        _activeFlashcards.value = emptyList()
+        _activeMindmap.value = null
+    }
+
     // --- Authentication & Active User State ---
     private val _currentUser = MutableStateFlow<UserEntity?>(null)
     val currentUser: StateFlow<UserEntity?> = _currentUser.asStateFlow()
