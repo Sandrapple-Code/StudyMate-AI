@@ -1,21 +1,42 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# StudyMate AI
 
-# Run and deploy your AI Studio app
+StudyMate AI is an AI-powered study companion designed to help students learn smarter and stay motivated.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/e2409216-baa8-44e6-9098-c8a997921459
+* AI Tutor powered by Gemini
+* Concept Explanation
+* Text Summarization
+* Flashcard Generation
+* Quiz Generation
+* Study Plan Creation
+* Smart Notes
+* Mind Maps
+* PDF Management
+* Daily Streaks
+* Achievement Badges
+* Interactive Study Companion
 
-## Run Locally
+## Tech Stack
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
+* Kotlin
+* Android Studio
+* Gemini API
+* Retrofit
+* Moshi
+* Material Design
 
+## Installation
 
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
+1. Clone the repository
+2. Open the project in Android Studio
+3. Configure your Gemini API key
+4. Build and run the application
+
+## Screenshots
+
+(Add screenshots here)
+
+## Author
+
+Developed as a student-focused AI learning platform.
