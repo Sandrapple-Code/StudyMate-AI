@@ -1,0 +1,6 @@
+{
+  "name": "StudyMate AI",
+  "description": "Your playful, Duolingo-inspired AI study companion with multiple generative tools, streaking systems, and progress trackers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
