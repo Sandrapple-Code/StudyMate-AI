@@ -35,7 +35,7 @@ StudyMate AI is an AI-powered study companion designed to help students learn sm
 
 ## Demo Video link
 
-https://drive.google.com/file/d/19ThM4icscCNWJp0PKjPMS3mw4QC-1_Aw/view?usp=drive_link
+https://drive.google.com/file/d/19ThM4icscCNWJp0PKjPMS3mw4QC-1_Aw/view?usp=sharing
 
 ## Author
 
