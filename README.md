@@ -33,9 +33,9 @@ StudyMate AI is an AI-powered study companion designed to help students learn sm
 3. Configure your Gemini API key
 4. Build and run the application
 
-## Screenshots
+## Demo Video link
 
-(Add screenshots here)
+https://drive.google.com/file/d/19ThM4icscCNWJp0PKjPMS3mw4QC-1_Aw/view?usp=drive_link
 
 ## Author
 
